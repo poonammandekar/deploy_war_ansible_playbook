@@ -1,0 +1,40 @@
+- name: Install Tomcat and deploy sample.war using wget
+  hosts: devlinux
+  become: yes
+  gather_facts: yes
+  remote_user: velocity
+
+  vars:
+    war_url: https://tomcat.apache.org/tomcat-6.0-doc/appdev/sample/sample.war
+    war_dest: /var/lib/tomcat/webapps/sample.war
+
+  tasks:
+
+    - name: Install Tomcat and required packages
+      yum:
+        name:
+          - tomcat
+          - tomcat-webapps
+          - tomcat-admin-webapps
+          - java-11-amazon-corretto.x86_64
+          - wget
+        state: present
+
+    - name: Start and enable Tomcat service
+      systemd:
+        name: tomcat
+        enabled: yes
+        state: started
+
+    - name: Download sample.war using wget
+      get_url:
+        url: "{{ war_url }}"
+        dest: "{{ war_dest }}"
+        owner: velocity
+        group: velocity
+        mode: '0644'
+
+    - name: Restart Tomcat to deploy WAR
+      systemd:
+        name: tomcat
+        state: restarted
